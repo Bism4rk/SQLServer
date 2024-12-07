@@ -1,0 +1,92 @@
+conn.Open "Provider=MSOLEDBSQL;Server=NOTEFAM440\SQLTROVATO;Database=SQL_DB_1;Trusted_Connection=yes;"
+
+conn.Open "Provider=SQLNCLI11;Server=NOTEALE\SQLTROVATO;Database=SQL_DB_1;Trusted_Connection=yes;"
+
+Option Explicit
+
+Private Sub btExecuta_Click()
+
+Dim conn            As ADODB.Connection
+Dim cmd             As ADODB.Command
+Dim rs              As ADODB.Recordset
+Dim param1          As ADODB.Parameter
+Dim param2          As ADODB.Parameter
+
+Dim SQL             As String
+Dim vNomeCurso      As String
+Dim vLogin          As String
+
+Dim ln              As Long
+
+Dim col             As Integer
+
+Dim w               As Worksheet
+
+Dim ultCel          As Range
+
+Set conn = New ADODB.Connection
+Set cmd = New ADODB.Command
+Set rs = New ADODB.Recordset
+
+conn.Open "Provider=MSOLEDBSQL;Server=NOTEFAM440\SQLTROVATO;Database=SQL_DB_1;Trusted_Connection=yes;"
+
+Set w = Sheets("Planilha1")
+Set ultCel = w.Cells(w.Rows.Count, 1).End(xlUp)
+
+w.Select
+
+ln = 2
+col = 1
+vLogin = UCase(Environ("username"))
+
+Do While ln <= ultCel.Row
+
+    vNomeCurso = w.Cells(ln, col).Value
+        
+    Set cmd = New ADODB.Command
+    cmd.ActiveConnection = conn
+
+    With cmd
+        .CommandType = adCmdStoredProc
+        .CommandText = "IncluirNovoCursoComValidacao"
+        .CommandTimeout = 0
+    End With
+
+    Set param1 = cmd.CreateParameter("@NomeCurso", adVarChar, adParamInput, 100, vNomeCurso)
+    cmd.Parameters.Append param1
+    
+    Set param2 = cmd.CreateParameter("@LoginCadastro", adVarChar, adParamInput, 100, vLogin)
+    cmd.Parameters.Append param2
+    
+    Set rs = cmd.Execute()
+    
+    If rs.State > 0 Then
+        
+        w.Cells(ln, col + 1).Value = rs.Fields(0).Value
+        rs.Close
+    
+    Else
+    
+        w.Cells(ln, 2).Value = "Incluído"
+
+    End If
+    
+    Set cmd = Nothing
+    
+    ln = ln + 1
+
+Loop
+
+conn.Close
+
+MsgBox "Processo de cadastro concluído"
+
+Set conn = Nothing
+Set rs = Nothing
+Set cmd = Nothing
+Set ultCel = Nothing
+Set w = Nothing
+
+
+End Sub
+
